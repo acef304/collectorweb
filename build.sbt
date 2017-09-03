@@ -20,6 +20,7 @@ resolvers += Classpaths.typesafeReleases
 
 libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra" % ScalatraVersion,
+  "com.github.salat" %% "salat" % "1.11.2",
   //"org.scalatra" %% "scalatra-scalate" % ScalatraVersion,
   //"org.scalatra" %% "scalatra-specs2" % ScalatraVersion % "test",
   "ch.qos.logback" % "logback-classic" % "1.1.5" % "runtime",
