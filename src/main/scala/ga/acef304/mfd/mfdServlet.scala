@@ -2,6 +2,7 @@ package ga.acef304.mfd
 
 import com.mongodb.casbah.commons.MongoDBObject
 import ga.acef304.rest.CollectorwebStack
+import ga.acef304.util.FileUtil
 import salat._
 import salat.global.ctx
 
@@ -21,33 +22,38 @@ class mfdServlet extends CollectorwebStack {
   }
 
   get("/ticker/ticks") {
-    val tickers = params.getOrElse("tickers", "")
-    val date = params.getOrElse("date", "01.09.2017")
+    val tickers = params.getOrElse("tickers", "").split(",")
+    val date = params.getOrElse("date", "01.11.2017")
     val groupId = params.getOrElse("groupId", "16")
-    val fileName = s"$tickers-$date.txt"
+    val fileName = FileUtil.getFileName(date, tickers)
 
-    val csvLines = mfd.getTicks(groupId, tickers.split(","), date, fileName)
+    val csvLines = mfd.getTicks(groupId, tickers, date, fileName)
 
-    scala.tools.nsc.io.File(fileName).writeAll(csvLines.mkString)
-    println(csvLines)
+    scala.tools.nsc.io.File(fileName).writeAll(csvLines.mkString("\n"))
     println(s"Written to $fileName")
   }
 
   get("/ticker/all") {
     val groupId = params.getOrElse("groupId", "16")
-    val date = params.getOrElse("date", "01.09.2017")
+    val date = params.getOrElse("date", "01.11.2017")
 
-    val tickers = TickerDAO.find(MongoDBObject("groupId" -> groupId)).map(t => t.id).grouped(25)
+    val start = System.currentTimeMillis()
 
-    Future {
-      for (t <- tickers) {
-        response.getOutputStream.println(t.toList.toString)
-        println("tick...")
-        Thread.sleep(1000)
-      }
+    //val tickers = TickerDAO.find(MongoDBObject("groupId" -> groupId)).map(t => t.id).grouped(25)
+
+    val tickers = mfd.getTickers(groupId)
+
+    for (t <- tickers.grouped(10)) {
+      println(t.length)
+      val fileName = FileUtil.getFileName(date, t.map(_.id))
+      val csvData = mfd.getTicks(groupId, t.map(_.id), date, fileName)
+      scala.tools.nsc.io.File(fileName).writeAll(csvData.mkString("\n"))
+      println(s"tick... ${tickers.indexOf(t.head) / tickers.length.toDouble}")
+      Thread.sleep(1000)
     }
 
-    println("Done")
+    val end = System.currentTimeMillis()
+    println(s"Done in ${(end - start) / 1000} sec")
     Unit
   }
 }
