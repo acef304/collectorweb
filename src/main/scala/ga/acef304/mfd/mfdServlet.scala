@@ -44,7 +44,6 @@ class mfdServlet extends CollectorwebStack {
     val tickers = mfd.getTickers(groupId)
 
     for (t <- tickers.grouped(10)) {
-      println(t.length)
       val fileName = FileUtil.getFileName(date, t.map(_.id))
       val csvData = mfd.getTicks(groupId, t.map(_.id), date, fileName)
       scala.tools.nsc.io.File(fileName).writeAll(csvData.mkString("\n"))
