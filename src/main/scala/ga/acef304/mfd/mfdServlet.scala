@@ -1,12 +1,12 @@
 package ga.acef304.mfd
 
+import java.io.FileWriter
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import com.mongodb.casbah.commons.MongoDBObject
 import ga.acef304.rest.CollectorwebStack
 import ga.acef304.util.FileUtil
-
 import salat._
 import salat.global.ctx
 
@@ -39,16 +39,16 @@ class mfdServlet extends CollectorwebStack {
 
   get("/ticker/mins") {
     val tickers = params.getOrElse("tickers", "").split(",")
-    val dateEnd = params.getOrElse("date", "01.11.2017")
+    val dateEnd = params.getOrElse("date", "01.01.2018")
     val groupId = params.getOrElse("groupId", "16")
     val fileName = FileUtil.getFileName("min", dateEnd, tickers)
 
     val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     val dateStart = formatter.format(LocalDate.parse(dateEnd, formatter).minusYears(1))
 
-    val csvLines = mfd.getMinutes(groupId, tickers, dateStart, dateEnd)
+    val csvLines = mfd.getMinutes(groupId, tickers, dateStart, dateEnd).mkString("\n")
 
-    scala.tools.nsc.io.File(fileName).writeAll(csvLines.mkString("\n"))
+    scala.tools.nsc.io.File(fileName).writeAll(csvLines)
     println(s"Written to $fileName")
   }
 
@@ -76,7 +76,7 @@ class mfdServlet extends CollectorwebStack {
   }
 
   get("/ticker/allMins") {
-    val dateEnd = params.getOrElse("date", "01.11.2017")
+    val dateEnd = params.getOrElse("date", "01.01.2018")
     val groupId = params.getOrElse("groupId", "16")
 
     val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
@@ -87,13 +87,14 @@ class mfdServlet extends CollectorwebStack {
     val tickers = mfd.getTickers(groupId)
 
     for (t <- tickers.grouped(5)) {
-      println(s"mins: ${t.map(_.id).mkString(", ")}")
       val fileName = FileUtil.getFileName("min", dateEnd, t.map(_.id))
-      val csvData = mfd.getMinutes(groupId, t.map(_.id), dateStart, dateEnd)
 
-      scala.tools.nsc.io.File(fileName).writeAll(csvData.mkString("\n"))
+      val fw = new FileWriter(fileName)
+      mfd.getMinutes(groupId, t.map(_.id), dateStart, dateEnd).grouped(1000).foreach(line => fw.write(line.mkString("\n") + "\n"))
+      fw.close()
+
       println(s"mins... ${tickers.indexOf(t.head) / tickers.length.toDouble}")
-      Thread.sleep(5000)
+      Thread.sleep(500)
     }
 
     val end = System.currentTimeMillis()

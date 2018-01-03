@@ -19,7 +19,7 @@ object mfd {
     }) toList
   }
 
-  private def getData(groupId: String, tickers: Iterable[String], dataType: Int, dateStart: String, dateEnd: String): List[String] = {
+  private def getData(groupId: String, tickers: Iterable[String], dataType: Int, dateStart: String, dateEnd: String) = {
     val baseUrl = "http://mfd.ru/export/handler.ashx"
     val tickersStr = tickers.mkString("%2C")
     val prefix = dataType match {
@@ -44,10 +44,10 @@ object mfd {
     val url = s"${baseUrl}/test.csv?${reqParams.mkString("&")}"
     println(url)
 
-    scala.io.Source.fromURL(url).getLines().toList
+    scala.io.Source.fromURL(url).getLines()
   }
 
-  def getTicks(groupId: String, tickers: Iterable[String], date: String): List[String] =
+  def getTicks(groupId: String, tickers: Iterable[String], date: String) =
     getData(groupId, tickers, 0, date, date)
 
   def getMinutes(groupId: String, tickers: Iterable[String], dateStart: String, dateEnd: String) =
